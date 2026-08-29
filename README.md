@@ -144,7 +144,7 @@ the parent directory. On an amd64 system, install or replace the same package
 version with:
 
 ```sh
-sudo apt install --reinstall ../thermalert_0.1.0-1_amd64.deb
+sudo apt install --reinstall ../thermalert_0.2.0-1_amd64.deb
 ```
 
 The package installs the executable under `/usr/bin`, desktop and icon assets,
