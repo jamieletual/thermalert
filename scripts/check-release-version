@@ -1,0 +1,45 @@
+#!/bin/sh
+
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+project_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
+cd "$project_dir"
+
+version=$(sed -n '1p' VERSION)
+tag=${1:-${GITHUB_REF_NAME:-}}
+
+if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo "VERSION must contain a semantic version such as 0.1.0" >&2
+    exit 1
+fi
+
+if [ -z "$tag" ]; then
+    echo "Usage: scripts/check-release-version TAG" >&2
+    exit 1
+fi
+
+if [ "$tag" != "v$version" ]; then
+    echo "release tag $tag does not match VERSION ($version)" >&2
+    exit 1
+fi
+
+debian_version=$(dpkg-parsechangelog --show-field Version)
+debian_upstream=$(printf '%s\n' "$debian_version" | sed -E 's/^[0-9]+://; s/-[^-]+$//')
+
+if [ "$debian_upstream" != "$version" ]; then
+    echo "Debian version $debian_version does not match VERSION ($version)" >&2
+    exit 1
+fi
+
+if ! grep -Fq "\"Thermalert $version\"" debian/thermalert.1; then
+    echo "debian/thermalert.1 does not identify Thermalert $version" >&2
+    exit 1
+fi
+
+if ! grep -Fq "thermalert_${debian_version}_amd64.deb" README.md; then
+    echo "README.md does not contain the expected Debian package filename" >&2
+    exit 1
+fi
+
+echo "Release versions agree: tag=$tag upstream=$version debian=$debian_version"

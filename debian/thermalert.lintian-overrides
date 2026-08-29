@@ -1,0 +1,3 @@
+# Thermalert is released independently rather than uploaded to Debian, so its
+# initial changelog does not have a Debian ITP bug to close.
+initial-upload-closes-no-bugs

@@ -1,0 +1,88 @@
+#!/bin/sh
+
+set -eu
+
+prefix=/usr/local
+version=$(sed -n '1p' VERSION)
+cc=${CC:-cc}
+pkg_config=${PKG_CONFIG:-pkg-config}
+
+if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo "configure: VERSION must contain a semantic version such as 0.1.0" >&2
+    exit 1
+fi
+
+usage() {
+    echo "Usage: ./configure [--prefix=PATH]"
+    echo "Environment: CC CPPFLAGS CFLAGS LDFLAGS PKG_CONFIG"
+}
+
+for option in "$@"; do
+    case "$option" in
+        --prefix=*) prefix=${option#*=} ;;
+        --help|-h) usage; exit 0 ;;
+        *) echo "configure: unknown option: $option" >&2; usage >&2; exit 1 ;;
+    esac
+done
+
+case "$prefix" in
+    /*) ;;
+    *) echo "configure: --prefix must be an absolute path" >&2; exit 1 ;;
+esac
+
+for tool in "$cc" make "$pkg_config" glib-compile-schemas; do
+    command -v "$tool" >/dev/null 2>&1 || {
+        echo "configure: required tool not found: $tool" >&2
+        exit 1
+    }
+done
+
+packages="gtk+-3.0 ayatana-appindicator3-0.1 libnotify gio-2.0"
+if ! "$pkg_config" --exists $packages; then
+    echo "configure: required GTK/AppIndicator/notification development files are missing" >&2
+    echo "Install: libgtk-3-dev libayatana-appindicator3-dev libnotify-dev libglib2.0-dev" >&2
+    "$pkg_config" --print-errors --exists $packages 2>&1 || true
+    exit 1
+fi
+
+tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/thermalert-configure.XXXXXX")
+trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
+printf '%s\n' '#include <sensors/sensors.h>' \
+    'int main(void) { return sensors_init(0); }' >"$tmpdir/conftest.c"
+if ! "$cc" ${CPPFLAGS:-} ${CFLAGS:-} "$tmpdir/conftest.c" \
+    ${LDFLAGS:-} -lsensors -o "$tmpdir/conftest" >/dev/null 2>&1; then
+    echo "configure: libsensors headers or development library not found" >&2
+    echo "Install: libsensors-dev" >&2
+    exit 1
+fi
+
+pkg_cflags=$("$pkg_config" --cflags $packages)
+pkg_libs=$("$pkg_config" --libs $packages)
+escaped_prefix=$(printf '%s' "$prefix" | sed 's/[&|\\]/\\&/g')
+escaped_cc=$(printf '%s' "$cc" | sed 's/[&|\\]/\\&/g')
+escaped_pkg_config=$(printf '%s' "$pkg_config" | sed 's/[&|\\]/\\&/g')
+escaped_pkg_cflags=$(printf '%s' "$pkg_cflags" | sed 's/[&|\\]/\\&/g')
+escaped_pkg_libs=$(printf '%s' "$pkg_libs" | sed 's/[&|\\]/\\&/g')
+
+sed -e "s|@PREFIX@|$escaped_prefix|g" \
+    -e "s|@CC@|$escaped_cc|g" \
+    -e "s|@PKG_CONFIG@|$escaped_pkg_config|g" \
+    -e "s|@PKG_CFLAGS@|$escaped_pkg_cflags|g" \
+    -e "s|@PKG_LIBS@|$escaped_pkg_libs|g" \
+    Makefile.in >Makefile
+
+cat >config.h <<EOF
+#ifndef THERMALERT_CONFIG_H
+#define THERMALERT_CONFIG_H
+#define THERMALERT_ICON_DIR "$prefix/share/icons"
+#define THERMALERT_VERSION "$version"
+#endif
+EOF
+
+echo "Thermalert configured successfully"
+echo "  version:      $version"
+echo "  prefix:       $prefix"
+echo "  compiler:     $cc"
+echo "  pkg-config:   $pkg_config"
+echo
+echo "Run 'make' to build and 'make check' to run non-GUI tests."

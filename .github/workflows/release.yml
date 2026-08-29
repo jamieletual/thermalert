@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build draft release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install build and validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            debhelper \
+            desktop-file-utils \
+            dpkg-dev \
+            groff \
+            libayatana-appindicator3-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libnotify-dev \
+            libsensors-dev \
+            lintian \
+            pkg-config
+
+      - name: Verify signed annotated tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag_object=$(
+            gh api "repos/${GH_REPO}/git/ref/tags/${GITHUB_REF_NAME}" \
+              --jq 'select(.object.type == "tag") | .object.sha'
+          )
+
+          if [[ -z "${tag_object}" ]]; then
+            echo "::error::${GITHUB_REF_NAME} is not an annotated tag."
+            exit 1
+          fi
+
+          verification=$(
+            gh api "repos/${GH_REPO}/git/tags/${tag_object}" \
+              --jq '[.verification.verified, .verification.reason] | @tsv'
+          )
+
+          if [[ "${verification}" != $'true\tvalid' ]]; then
+            echo "::error::GitHub did not verify ${GITHUB_REF_NAME}: ${verification}"
+            exit 1
+          fi
+
+          echo "GitHub verified the signature on ${GITHUB_REF_NAME}."
+
+      - name: Verify release versions
+        run: ./scripts/check-release-version "${GITHUB_REF_NAME}"
+
+      - name: Configure
+        run: ./configure --prefix=/usr
+
+      - name: Build
+        run: make --jobs="$(nproc)"
+
+      - name: Run tests
+        run: make check
+
+      - name: Validate desktop integration metadata
+        run: |
+          desktop-file-validate data/com.thermalert.Thermalert.desktop
+          desktop-file-validate data/com.thermalert.Thermalert-autostart.desktop
+          groff -mandoc -Tutf8 debian/thermalert.1 >/dev/null
+
+      - name: Build Debian package
+        run: dpkg-buildpackage --build=binary --no-sign
+
+      - name: Run Lintian
+        run: lintian --fail-on error ../thermalert_*_amd64.changes
+
+      - name: Collect release assets
+        run: |
+          mkdir artifacts
+          cp \
+            ../thermalert_*_amd64.deb \
+            ../thermalert-dbgsym_*_amd64.ddeb \
+            ../thermalert_*_amd64.buildinfo \
+            ../thermalert_*_amd64.changes \
+            artifacts/
+          cd artifacts
+          sha256sum thermalert_*.deb thermalert-dbgsym_*.ddeb >SHA256SUMS
+
+      - name: Preserve workflow artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: thermalert-${{ github.ref_name }}-amd64
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" artifacts/* \
+            --draft \
+            --generate-notes \
+            --title "Thermalert ${GITHUB_REF_NAME#v}" \
+            --verify-tag

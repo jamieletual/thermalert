@@ -1,0 +1,37 @@
+name: Verify commit signatures
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    name: Verify pull request commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reject unverified commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          unverified="$({
+            gh api --paginate \
+              "repos/${GH_REPO}/pulls/${PR_NUMBER}/commits?per_page=100" \
+              --jq '.[] | select(.commit.verification.verified != true) | "\(.sha) (\(.commit.verification.reason))"'
+          })"
+
+          if [[ -n "${unverified}" ]]; then
+            echo "::error::The pull request contains commits GitHub did not verify."
+            printf '%s\n' "${unverified}"
+            exit 1
+          fi
+
+          echo "All pull request commits have verified signatures."

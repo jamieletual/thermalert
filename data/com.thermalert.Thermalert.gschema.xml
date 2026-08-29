@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="com.thermalert.Thermalert" path="/com/thermalert/Thermalert/">
+    <key name="warning-temperature" type="d">
+      <default>80.0</default>
+      <range min="1.0" max="149.0"/>
+      <summary>Warning temperature</summary>
+      <description>Temperature in degrees Celsius at which the warning state begins.</description>
+    </key>
+    <key name="critical-temperature" type="d">
+      <default>100.0</default>
+      <range min="2.0" max="150.0"/>
+      <summary>Critical temperature</summary>
+      <description>Temperature in degrees Celsius at which the critical state begins.</description>
+    </key>
+    <key name="hysteresis" type="d">
+      <default>5.0</default>
+      <range min="0.0" max="30.0"/>
+      <summary>Temperature hysteresis</summary>
+      <description>Cooling margin in degrees Celsius required before lowering the alert state.</description>
+    </key>
+    <key name="polling-interval" type="u">
+      <default>5</default>
+      <range min="1" max="300"/>
+      <summary>Polling interval</summary>
+      <description>Seconds between temperature readings.</description>
+    </key>
+    <key name="primary-sensor" type="s">
+      <default>''</default>
+      <summary>Primary temperature sensor</summary>
+      <description>Stable sensor identifier to display and monitor, or an empty string to select automatically.</description>
+    </key>
+  </schema>
+</schemalist>

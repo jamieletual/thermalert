@@ -1,0 +1,48 @@
+.TH THERMALERT 1 "August 2026" "Thermalert 0.1.0" "User Commands"
+.SH NAME
+thermalert \- monitor hardware temperatures from the system status area
+.SH SYNOPSIS
+.B thermalert
+.SH DESCRIPTION
+.B Thermalert
+is a graphical hardware-temperature monitor designed for the GNOME desktop,
+particularly Ubuntu GNOME. It reads available temperature sensors through
+libsensors and displays the selected primary temperature in the desktop system
+status area. It may also work in compatible desktop environments that support
+GTK 3, GSettings, and AppIndicator status icons.
+.PP
+The indicator menu provides current sensor readings, a real-time temperature
+graph, configurable warning and critical thresholds, and desktop
+notifications. Thermalert defines no application-specific command-line
+options; GTK may accept its standard options.
+.PP
+Automatic sensor selection prefers CPU-wide readings such as Intel Package id
+0, followed by AMD Tctl, AMD Tdie, firmware CPU sensors, and individual CPU
+cores. If none are present, it uses the hottest valid reading. A specific
+detected sensor can be selected in Preferences. The default warning and
+critical thresholds are 80 and 100 degrees Celsius, with 5 degrees of
+hysteresis.
+.PP
+Preferences also provide an option to start Thermalert automatically when the
+user logs in. Installing the package does not enable autostart.
+.SH FILES
+.TP
+.I /usr/share/glib-2.0/schemas/com.thermalert.Thermalert.gschema.xml
+GSettings schema containing Thermalert preferences and defaults.
+.TP
+.I /usr/share/thermalert/autostart/com.thermalert.Thermalert-autostart.desktop
+Reference desktop-entry template installed by the package.
+.TP
+.I $XDG_CONFIG_HOME/autostart/com.thermalert.Thermalert-autostart.desktop
+Per-user autostart entry created and removed by the Preferences checkbox.
+If
+.B XDG_CONFIG_HOME
+is unset, the default location is
+.IR ~/.config/autostart/ .
+.SH SEE ALSO
+.BR sensors (1)
+.SH AUTHOR
+Thermalert was written by Jamie Le Tual.
+.SH COPYRIGHT
+Copyright (C) 2026 Jamie Le Tual.
+Thermalert is licensed under the GNU General Public License, version 3.

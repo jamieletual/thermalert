@@ -1,0 +1,5 @@
+thermalert (0.1.0-1) noble; urgency=medium
+
+  * Initial Debian package.
+
+ -- Jamie Le Tual <jamie.letual@gmail.com>  Sat, 29 Aug 2026 10:22:52 -0400

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Thermalert
+Comment=Monitor hardware temperatures from the system status area
+Exec=thermalert
+Icon=thermalert-normal
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=GNOME;Unity;

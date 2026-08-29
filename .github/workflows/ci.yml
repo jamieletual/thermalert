@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    name: Build, test, and package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install build and validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            debhelper \
+            desktop-file-utils \
+            dpkg-dev \
+            groff \
+            libayatana-appindicator3-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libnotify-dev \
+            libsensors-dev \
+            lintian \
+            pkg-config
+
+      - name: Configure
+        run: ./configure --prefix=/usr
+
+      - name: Build
+        run: make --jobs="$(nproc)"
+
+      - name: Run tests
+        run: make check
+
+      - name: Validate desktop integration metadata
+        run: |
+          desktop-file-validate data/com.thermalert.Thermalert.desktop
+          desktop-file-validate data/com.thermalert.Thermalert-autostart.desktop
+          groff -mandoc -Tutf8 debian/thermalert.1 >/dev/null
+
+      - name: Build Debian package
+        run: dpkg-buildpackage --build=binary --no-sign
+
+      - name: Run Lintian
+        run: lintian --fail-on error ../thermalert_*_amd64.changes
+
+      - name: Collect package artifacts
+        run: |
+          mkdir artifacts
+          cp \
+            ../thermalert_*_amd64.deb \
+            ../thermalert-dbgsym_*_amd64.ddeb \
+            ../thermalert_*_amd64.buildinfo \
+            ../thermalert_*_amd64.changes \
+            artifacts/
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: thermalert-debian-amd64
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14

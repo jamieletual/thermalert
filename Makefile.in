@@ -1,0 +1,92 @@
+PREFIX = @PREFIX@
+CC = @CC@
+PKG_CONFIG = @PKG_CONFIG@
+
+bindir = $(PREFIX)/bin
+datadir = $(PREFIX)/share
+schemadir = $(datadir)/glib-2.0/schemas
+icondir = $(datadir)/icons/hicolor/22x22/status
+applicationsdir = $(datadir)/applications
+autostartdir = $(datadir)/thermalert/autostart
+
+CPPFLAGS ?=
+CFLAGS ?= -O2 -g
+LDFLAGS ?=
+WARN_CFLAGS = -std=c11 -Wall -Wextra -Wpedantic
+PKG_CFLAGS = @PKG_CFLAGS@
+PKG_LIBS = @PKG_LIBS@
+
+PROGRAM = build/thermalert
+SOURCES = src/main.c src/sensors.c src/history.c src/thermal.c src/indicator.c src/monitor.c src/preferences.c
+OBJECTS = $(SOURCES:src/%.c=build/%.o)
+DEPS = $(OBJECTS:.o=.d)
+SCHEMA = data/com.thermalert.Thermalert.gschema.xml
+ICONS = normal warning critical unknown
+ICON_FILES = $(ICONS:%=data/icons/thermalert-%.svg)
+
+.PHONY: all run check install uninstall clean schemas
+
+all: $(PROGRAM)
+
+$(PROGRAM): $(OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) $(PKG_LIBS) -lsensors
+
+build/%.o: src/%.c config.h
+	@mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(WARN_CFLAGS) $(PKG_CFLAGS) -Iinclude -I. -MMD -MP -c $< -o $@
+
+build/test-thermal: tests/test-thermal.c src/thermal.c include/thermal.h
+	@mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(WARN_CFLAGS) $$( $(PKG_CONFIG) --cflags glib-2.0 ) -Iinclude tests/test-thermal.c src/thermal.c -o $@ $$( $(PKG_CONFIG) --libs glib-2.0 )
+
+build/test-sensors: tests/test-sensors.c src/sensors.c include/sensors.h
+	@mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(WARN_CFLAGS) $$( $(PKG_CONFIG) --cflags glib-2.0 ) -Iinclude tests/test-sensors.c src/sensors.c -o $@ $$( $(PKG_CONFIG) --libs glib-2.0 ) -lsensors
+
+build/test-history: tests/test-history.c src/history.c include/history.h include/sensors.h
+	@mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(WARN_CFLAGS) $$( $(PKG_CONFIG) --cflags glib-2.0 ) -Iinclude tests/test-history.c src/history.c src/sensors.c -o $@ $$( $(PKG_CONFIG) --libs glib-2.0 ) -lsensors
+
+schemas: $(SCHEMA)
+	@mkdir -p build/schemas
+	cp $(SCHEMA) build/schemas/
+	glib-compile-schemas --strict build/schemas
+
+run: all schemas
+	env -u GTK_PATH -u GTK_EXE_PREFIX -u GTK_IM_MODULE_FILE \
+		-u GIO_MODULE_DIR -u GDK_PIXBUF_MODULEDIR -u GDK_PIXBUF_MODULE_FILE \
+		-u LOCPATH -u SNAP GSETTINGS_SCHEMA_DIR="$(CURDIR)/build/schemas" \
+		THERMALERT_ICON_DIR="$(CURDIR)/data/icons" ./$(PROGRAM)
+
+check: build/test-thermal build/test-sensors build/test-history schemas
+	./build/test-thermal
+	./build/test-sensors
+	./build/test-history
+
+install: all
+	install -d "$(DESTDIR)$(bindir)" "$(DESTDIR)$(schemadir)" \
+		"$(DESTDIR)$(icondir)" "$(DESTDIR)$(applicationsdir)" \
+		"$(DESTDIR)$(autostartdir)"
+	install -m 755 $(PROGRAM) "$(DESTDIR)$(bindir)/thermalert"
+	install -m 644 $(SCHEMA) "$(DESTDIR)$(schemadir)/"
+	install -m 644 $(ICON_FILES) "$(DESTDIR)$(icondir)/"
+	install -m 644 data/com.thermalert.Thermalert.desktop "$(DESTDIR)$(applicationsdir)/"
+	install -m 644 data/com.thermalert.Thermalert-autostart.desktop "$(DESTDIR)$(autostartdir)/"
+	@if test -z "$(DESTDIR)"; then \
+		glib-compile-schemas "$(schemadir)"; \
+	fi
+
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)/thermalert"
+	rm -f "$(DESTDIR)$(schemadir)/com.thermalert.Thermalert.gschema.xml"
+	rm -f $(ICONS:%="$(DESTDIR)$(icondir)/thermalert-%.svg")
+	rm -f "$(DESTDIR)$(applicationsdir)/com.thermalert.Thermalert.desktop"
+	rm -f "$(DESTDIR)$(autostartdir)/com.thermalert.Thermalert-autostart.desktop"
+	@if test -z "$(DESTDIR)"; then \
+		glib-compile-schemas "$(schemadir)"; \
+	fi
+
+clean:
+	rm -rf build
+
+-include $(DEPS)

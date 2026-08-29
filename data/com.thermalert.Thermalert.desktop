@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Thermalert
+Comment=Monitor hardware temperatures from the system status area
+Exec=thermalert
+Icon=thermalert-normal
+Terminal=false
+Categories=System;Monitor;
+Keywords=temperature;thermal;sensors;hardware;monitor;
+StartupNotify=false
+X-GNOME-UsesNotifications=true
