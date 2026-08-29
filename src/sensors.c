@@ -1,5 +1,7 @@
 #include "sensors.h"
 
+#include "i18n.h"
+
 #include <math.h>
 #include <stdlib.h>
 
@@ -39,7 +41,8 @@ thermal_sensors_read(GError **error)
     status = sensors_init(NULL);
     if (status != 0) {
         g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
-                    "libsensors initialization failed with error %d", status);
+                    _("libsensors initialization failed with error %d"),
+                    status);
         return NULL;
     }
 
@@ -52,7 +55,7 @@ thermal_sensors_read(GError **error)
         gchar chip_name[256];
 
         if (sensors_snprintf_chip_name(chip_name, sizeof chip_name, chip) < 0)
-            g_strlcpy(chip_name, "unknown device", sizeof chip_name);
+            g_strlcpy(chip_name, _("unknown device"), sizeof chip_name);
 
         while ((feature = sensors_get_features(chip, &feature_index)) != NULL) {
             const sensors_subfeature *input;

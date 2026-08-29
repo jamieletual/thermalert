@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Jamie Le Tual <jamie.letual@gmail.com>
 Build-Depends:
  debhelper-compat (= 13),
+ gettext,
  pkg-config,
  libgtk-3-dev,
  libayatana-appindicator3-dev,

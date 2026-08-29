@@ -4,12 +4,15 @@
 
 #include <glib/gstdio.h>
 
+#include "i18n.h"
+
 #define AUTOSTART_DESKTOP_FILE "com.thermalert.Thermalert-autostart.desktop"
 #define AUTOSTART_CONTENT \
     "[Desktop Entry]\n" \
     "Type=Application\n" \
     "Name=Thermalert\n" \
     "Comment=Monitor hardware temperatures from the system status area\n" \
+    "Comment[fr]=Surveiller les températures matérielles dans la zone d’état du système\n" \
     "Exec=thermalert\n" \
     "Icon=thermalert-normal\n" \
     "Terminal=false\n" \
@@ -63,7 +66,7 @@ value_changed(GtkSpinButton *spin, gpointer data)
     critical = gtk_spin_button_get_value(preferences->critical);
     if (critical <= warning) {
         gtk_label_set_text(GTK_LABEL(preferences->validation),
-                           "Critical temperature must be higher than warning.");
+                           _("Critical temperature must be higher than warning."));
         gtk_widget_show(preferences->validation);
         return;
     }
@@ -130,13 +133,13 @@ autostart_toggled(GtkToggleButton *button, gpointer data)
     if (enabled) {
         if (g_mkdir_with_parents(directory, 0700) != 0)
             g_set_error(&error, G_FILE_ERROR, g_file_error_from_errno(errno),
-                        "Could not create %s: %s", directory,
+                        _("Could not create %s: %s"), directory,
                         g_strerror(errno));
         else
             g_file_set_contents(path, AUTOSTART_CONTENT, -1, &error);
     } else if (g_remove(path) != 0 && errno != ENOENT) {
         g_set_error(&error, G_FILE_ERROR, g_file_error_from_errno(errno),
-                    "Could not remove %s: %s", path, g_strerror(errno));
+                    _("Could not remove %s: %s"), path, g_strerror(errno));
     }
 
     if (error != NULL) {
@@ -226,7 +229,8 @@ thermal_preferences_new(GSettings *settings)
     preferences = g_new0(ThermalPreferences, 1);
     preferences->settings = g_object_ref(settings);
     preferences->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(preferences->window), "Thermalert Preferences");
+    gtk_window_set_title(GTK_WINDOW(preferences->window),
+                         _("Thermalert Preferences"));
     gtk_window_set_default_size(GTK_WINDOW(preferences->window), 360, -1);
     gtk_container_set_border_width(GTK_CONTAINER(preferences->window), 18);
     g_signal_connect(preferences->window, "delete-event",
@@ -237,7 +241,7 @@ thermal_preferences_new(GSettings *settings)
     gtk_grid_set_column_spacing(GTK_GRID(grid), 18);
     gtk_container_add(GTK_CONTAINER(preferences->window), grid);
 
-    label = gtk_label_new("Primary temperature sensor");
+    label = gtk_label_new(_("Primary temperature sensor"));
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     preferences->sensor = GTK_COMBO_BOX_TEXT(gtk_combo_box_text_new());
     gtk_widget_set_hexpand(GTK_WIDGET(preferences->sensor), TRUE);
@@ -245,26 +249,26 @@ thermal_preferences_new(GSettings *settings)
     gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(preferences->sensor), 1, 0, 1, 1);
 
     preferences->autostart = GTK_TOGGLE_BUTTON(gtk_check_button_new_with_label(
-        "Start Thermalert automatically when I log in"));
+        _("Start Thermalert automatically when I log in")));
     gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(preferences->autostart),
                     0, 1, 2, 1);
 
     preferences->notifications = GTK_TOGGLE_BUTTON(
         gtk_check_button_new_with_label(
-            "Enable critical-temperature notifications"));
+            _("Enable critical-temperature notifications")));
     gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(preferences->notifications),
                     0, 2, 2, 1);
 
-    spin = add_spin_row(GTK_GRID(grid), 3, "Warning temperature (°C)",
+    spin = add_spin_row(GTK_GRID(grid), 3, _("Warning temperature (°C)"),
                         1.0, 149.0, 1.0, &preferences->warning);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    spin = add_spin_row(GTK_GRID(grid), 4, "Critical temperature (°C)",
+    spin = add_spin_row(GTK_GRID(grid), 4, _("Critical temperature (°C)"),
                         2.0, 150.0, 1.0, &preferences->critical);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    spin = add_spin_row(GTK_GRID(grid), 5, "Hysteresis (°C)",
+    spin = add_spin_row(GTK_GRID(grid), 5, _("Hysteresis (°C)"),
                         0.0, 30.0, 1.0, &preferences->hysteresis);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    add_spin_row(GTK_GRID(grid), 6, "Polling interval (seconds)",
+    add_spin_row(GTK_GRID(grid), 6, _("Polling interval (seconds)"),
                  1.0, 300.0, 1.0, &preferences->interval);
 
     preferences->validation = gtk_label_new(NULL);
@@ -326,11 +330,11 @@ thermal_preferences_update_sensors(
     }
     configured_available = thermal_sensors_find(snapshot, configured_id) != NULL;
     if (automatic_sensor != NULL)
-        automatic_label = g_strdup_printf("Automatic — %s (%s)",
+        automatic_label = g_strdup_printf(_("Automatic — %s (%s)"),
                                           automatic_sensor->label,
                                           automatic_sensor->chip);
     else
-        automatic_label = g_strdup("Automatic — no sensors available");
+        automatic_label = g_strdup(_("Automatic — no sensors available"));
 
     preferences->syncing = TRUE;
     gtk_combo_box_text_remove_all(preferences->sensor);
@@ -345,7 +349,7 @@ thermal_preferences_update_sensors(
         g_free(label);
     }
     if (*configured_id != '\0' && !configured_available) {
-        gchar *label = g_strdup_printf("Unavailable — %s", configured_id);
+        gchar *label = g_strdup_printf(_("Unavailable — %s"), configured_id);
         gtk_combo_box_text_append(preferences->sensor, configured_id, label);
         g_free(label);
     }

@@ -1,5 +1,7 @@
 #include "monitor.h"
 
+#include "i18n.h"
+
 #include <math.h>
 
 #define GRAPH_MIN_C 0.0
@@ -182,9 +184,9 @@ draw_graph(GtkWidget *widget, cairo_t *cr, gpointer data)
 
     cairo_set_source_rgba(cr, 0.72, 0.74, 0.77, 0.9);
     cairo_move_to(cr, left, top + height + 19.0);
-    cairo_show_text(cr, "5 minutes ago");
+    cairo_show_text(cr, _("5 minutes ago"));
     cairo_move_to(cr, left + width - 22.0, top + height + 19.0);
-    cairo_show_text(cr, "now");
+    cairo_show_text(cr, _("now"));
     return FALSE;
 }
 
@@ -207,7 +209,7 @@ update_statistics(ThermalMonitor *monitor)
         g_free(title);
     } else {
         gtk_label_set_text(GTK_LABEL(monitor->sensor_label),
-                           "Select a temperature sensor");
+                           _("Select a temperature sensor"));
     }
     has_statistics = thermal_sensor_history_statistics(
         sensor, &current, &has_current, &minimum, &maximum);
@@ -304,7 +306,7 @@ thermal_monitor_new(void)
     GtkWidget *statistics = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 32);
     GtkWidget *selector = gtk_scrolled_window_new(NULL, NULL);
     GtkWidget *selector_content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-    GtkWidget *selector_title = gtk_label_new("Sensors");
+    GtkWidget *selector_title = gtk_label_new(_("Sensors"));
 
     monitor->visible_ids = g_hash_table_new_full(g_str_hash, g_str_equal,
                                                   g_free, NULL);
@@ -312,13 +314,14 @@ thermal_monitor_new(void)
                                                      g_free, NULL);
 
     monitor->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(monitor->window), "Temperature Monitor");
+    gtk_window_set_title(GTK_WINDOW(monitor->window),
+                         _("Temperature Monitor"));
     gtk_window_set_default_size(GTK_WINDOW(monitor->window), 940, 500);
     gtk_container_set_border_width(GTK_CONTAINER(monitor->window), 18);
     g_signal_connect(monitor->window, "delete-event", G_CALLBACK(hide_window),
                      NULL);
 
-    monitor->sensor_label = gtk_label_new("Waiting for sensor readings…");
+    monitor->sensor_label = gtk_label_new(_("Waiting for sensor readings…"));
     gtk_widget_set_halign(monitor->sensor_label, GTK_ALIGN_START);
     gtk_style_context_add_class(
         gtk_widget_get_style_context(monitor->sensor_label), "title");
@@ -326,11 +329,11 @@ thermal_monitor_new(void)
                        FALSE, FALSE, 0);
 
     gtk_box_pack_start(GTK_BOX(statistics),
-        statistic_box("Current", &monitor->current_label), FALSE, FALSE, 0);
+        statistic_box(_("Current"), &monitor->current_label), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(statistics),
-        statistic_box("Minimum", &monitor->minimum_label), FALSE, FALSE, 0);
+        statistic_box(_("Minimum"), &monitor->minimum_label), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(statistics),
-        statistic_box("Maximum", &monitor->maximum_label), FALSE, FALSE, 0);
+        statistic_box(_("Maximum"), &monitor->maximum_label), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(content), statistics, FALSE, FALSE, 0);
 
     monitor->drawing_area = gtk_drawing_area_new();

@@ -1,8 +1,10 @@
 #include <gio/gio.h>
 #include <gtk/gtk.h>
+#include <locale.h>
 
 #include "config.h"
 #include "history.h"
+#include "i18n.h"
 #include "indicator.h"
 #include "monitor.h"
 #include "preferences.h"
@@ -69,7 +71,8 @@ poll_sensors(gpointer data)
     snapshot = thermal_sensors_read(&error);
     if (snapshot == NULL) {
         if (!application->sensor_error_reported) {
-            g_warning("Unable to read temperature sensors: %s", error->message);
+            g_warning(_("Unable to read temperature sensors: %s"),
+                      error->message);
             application->sensor_error_reported = TRUE;
         }
         g_clear_error(&error);
@@ -159,10 +162,19 @@ main(int argc, char **argv)
 {
     ThermalApplication application = { 0 };
     const gchar *icon_directory;
+    const gchar *locale_directory;
     gulong settings_handler;
 
+    setlocale(LC_ALL, "");
+    locale_directory = g_getenv("THERMALERT_LOCALE_DIR");
+    if (locale_directory == NULL || *locale_directory == '\0')
+        locale_directory = THERMALERT_LOCALE_DIR;
+    bindtextdomain(GETTEXT_PACKAGE, locale_directory);
+    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
+    textdomain(GETTEXT_PACKAGE);
+
     if (!gtk_init_check(&argc, &argv)) {
-        g_printerr("Thermalert requires a graphical GTK session.\n");
+        g_printerr(_("Thermalert requires a graphical GTK session.\n"));
         return 1;
     }
 

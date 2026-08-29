@@ -79,14 +79,37 @@ built with GCC and Make using:
 - Ayatana AppIndicator
 - libnotify
 - GLib and GSettings
+- GNU gettext (for translations)
 
 Install the build dependencies and the `sensors` diagnostic utility with:
 
 ```sh
 sudo apt update
 sudo apt install build-essential pkg-config libsensors-dev lm-sensors \
-  libgtk-3-dev libayatana-appindicator3-dev libnotify-dev libglib2.0-dev
+  libgtk-3-dev libayatana-appindicator3-dev libnotify-dev libglib2.0-dev \
+  gettext
 ```
+
+## Languages and translations
+
+Thermalert follows the desktop locale and currently includes English and
+French user-interface translations. To test French directly from the source
+tree, run:
+
+```sh
+LANGUAGE=fr make run
+```
+
+Translatable strings use GNU gettext. After changing those strings, regenerate
+the template and merge it into the French catalog with:
+
+```sh
+make pot
+msgmerge --update po/fr.po po/thermalert.pot
+```
+
+Review the resulting translations before building. `make` validates and
+compiles each catalog into the runtime locale directory.
 
 ## Configuration, build, and use
 

@@ -8,6 +8,7 @@ schemadir = $(datadir)/glib-2.0/schemas
 icondir = $(datadir)/icons/hicolor/22x22/status
 applicationsdir = $(datadir)/applications
 autostartdir = $(datadir)/thermalert/autostart
+localedir = $(datadir)/locale
 
 CPPFLAGS ?=
 CFLAGS ?= -O2 -g
@@ -23,10 +24,12 @@ DEPS = $(OBJECTS:.o=.d)
 SCHEMA = data/com.thermalert.Thermalert.gschema.xml
 ICONS = normal warning critical unknown
 ICON_FILES = $(ICONS:%=data/icons/thermalert-%.svg)
+LINGUAS = fr
+MO_FILES = $(LINGUAS:%=build/locale/%/LC_MESSAGES/thermalert.mo)
 
-.PHONY: all run check install uninstall clean schemas
+.PHONY: all run check install uninstall clean schemas pot
 
-all: $(PROGRAM)
+all: $(PROGRAM) $(MO_FILES)
 
 $(PROGRAM): $(OBJECTS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) $(PKG_LIBS) -lsensors
@@ -47,6 +50,16 @@ build/test-history: tests/test-history.c src/history.c include/history.h include
 	@mkdir -p build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(WARN_CFLAGS) $$( $(PKG_CONFIG) --cflags glib-2.0 ) -Iinclude tests/test-history.c src/history.c src/sensors.c -o $@ $$( $(PKG_CONFIG) --libs glib-2.0 ) -lsensors
 
+build/locale/%/LC_MESSAGES/thermalert.mo: po/%.po
+	@mkdir -p $(@D)
+	msgfmt --check --check-format -o $@ $<
+
+pot:
+	xgettext --from-code=UTF-8 --language=C --keyword=_ --keyword=N_ \
+		--package-name=Thermalert --package-version=$$(sed -n '1p' VERSION) \
+		--copyright-holder="Jamie Le Tual" \
+		--output=po/thermalert.pot $(SOURCES)
+
 schemas: $(SCHEMA)
 	@mkdir -p build/schemas
 	cp $(SCHEMA) build/schemas/
@@ -56,9 +69,10 @@ run: all schemas
 	env -u GTK_PATH -u GTK_EXE_PREFIX -u GTK_IM_MODULE_FILE \
 		-u GIO_MODULE_DIR -u GDK_PIXBUF_MODULEDIR -u GDK_PIXBUF_MODULE_FILE \
 		-u LOCPATH -u SNAP GSETTINGS_SCHEMA_DIR="$(CURDIR)/build/schemas" \
+		THERMALERT_LOCALE_DIR="$(CURDIR)/build/locale" \
 		THERMALERT_ICON_DIR="$(CURDIR)/data/icons" ./$(PROGRAM)
 
-check: build/test-thermal build/test-sensors build/test-history schemas
+check: build/test-thermal build/test-sensors build/test-history schemas $(MO_FILES)
 	./build/test-thermal
 	./build/test-sensors
 	./build/test-history
@@ -72,6 +86,11 @@ install: all
 	install -m 644 $(ICON_FILES) "$(DESTDIR)$(icondir)/"
 	install -m 644 data/com.thermalert.Thermalert.desktop "$(DESTDIR)$(applicationsdir)/"
 	install -m 644 data/com.thermalert.Thermalert-autostart.desktop "$(DESTDIR)$(autostartdir)/"
+	@for language in $(LINGUAS); do \
+		install -d "$(DESTDIR)$(localedir)/$$language/LC_MESSAGES"; \
+		install -m 644 "build/locale/$$language/LC_MESSAGES/thermalert.mo" \
+			"$(DESTDIR)$(localedir)/$$language/LC_MESSAGES/"; \
+	done
 	@if test -z "$(DESTDIR)"; then \
 		glib-compile-schemas "$(schemadir)"; \
 	fi
@@ -82,6 +101,9 @@ uninstall:
 	rm -f $(ICONS:%="$(DESTDIR)$(icondir)/thermalert-%.svg")
 	rm -f "$(DESTDIR)$(applicationsdir)/com.thermalert.Thermalert.desktop"
 	rm -f "$(DESTDIR)$(autostartdir)/com.thermalert.Thermalert-autostart.desktop"
+	@for language in $(LINGUAS); do \
+		rm -f "$(DESTDIR)$(localedir)/$$language/LC_MESSAGES/thermalert.mo"; \
+	done
 	@if test -z "$(DESTDIR)"; then \
 		glib-compile-schemas "$(schemadir)"; \
 	fi
