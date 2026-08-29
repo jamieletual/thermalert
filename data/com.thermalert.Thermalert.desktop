@@ -1,7 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=Thermalert
+Name[fr]=Thermalert
 Comment=Monitor hardware temperatures from the system status area
+Comment[fr]=Surveiller les températures matérielles dans la zone d’état du système
 Exec=thermalert
 Icon=thermalert-normal
 Terminal=false

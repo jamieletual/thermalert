@@ -30,7 +30,7 @@ case "$prefix" in
     *) echo "configure: --prefix must be an absolute path" >&2; exit 1 ;;
 esac
 
-for tool in "$cc" make "$pkg_config" glib-compile-schemas; do
+for tool in "$cc" make "$pkg_config" glib-compile-schemas msgfmt; do
     command -v "$tool" >/dev/null 2>&1 || {
         echo "configure: required tool not found: $tool" >&2
         exit 1
@@ -75,6 +75,7 @@ cat >config.h <<EOF
 #ifndef THERMALERT_CONFIG_H
 #define THERMALERT_CONFIG_H
 #define THERMALERT_ICON_DIR "$prefix/share/icons"
+#define THERMALERT_LOCALE_DIR "$prefix/share/locale"
 #define THERMALERT_VERSION "$version"
 #endif
 EOF

@@ -4,6 +4,7 @@
 #include <libnotify/notify.h>
 
 #include "config.h"
+#include "i18n.h"
 
 struct _ThermalIndicator {
     AppIndicator *app_indicator;
@@ -73,12 +74,12 @@ show_about(GtkMenuItem *item, gpointer data)
         NULL,
         "program-name", "Thermalert",
         "version", THERMALERT_VERSION,
-        "comments", "A lightweight temperature monitor for Ubuntu.",
-        "copyright", "Copyright (C) 2026 Jamie Le Tual",
+        "comments", _("A lightweight temperature monitor for Ubuntu."),
+        "copyright", _("Copyright (C) 2026 Jamie Le Tual"),
         "license-type", GTK_LICENSE_GPL_3_0,
         "authors", authors,
         "website", "https://github.com/jamieletual/thermalert",
-        "website-label", "Thermalert on GitHub",
+        "website-label", _("Thermalert on GitHub"),
         NULL);
 }
 
@@ -96,19 +97,19 @@ build_menu(ThermalIndicator *indicator)
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
     indicator->sensor_separator = gtk_separator_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), indicator->sensor_separator);
-    item = gtk_menu_item_new_with_label("Temperature Monitor…");
+    item = gtk_menu_item_new_with_label(_("Temperature Monitor…"));
     g_signal_connect(item, "activate", indicator->monitor_callback,
                      indicator->monitor_data);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-    item = gtk_menu_item_new_with_label("Preferences…");
+    item = gtk_menu_item_new_with_label(_("Preferences…"));
     g_signal_connect(item, "activate", indicator->preferences_callback,
                      indicator->preferences_data);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-    item = gtk_menu_item_new_with_label("About Thermalert");
+    item = gtk_menu_item_new_with_label(_("About Thermalert"));
     g_signal_connect(item, "activate", G_CALLBACK(show_about), NULL);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
-    item = gtk_menu_item_new_with_label("Quit");
+    item = gtk_menu_item_new_with_label(_("Quit"));
     g_signal_connect(item, "activate", indicator->quit_callback,
                      indicator->quit_data);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
@@ -246,7 +247,7 @@ thermal_indicator_update(ThermalIndicator *indicator,
 
     g_return_if_fail(indicator != NULL);
     app_indicator_set_icon_full(indicator->app_indicator, icon_for_state(state),
-                                thermal_state_name(state));
+                                _(thermal_state_name(state)));
     if (primary != NULL)
         panel_label = g_strdup_printf("%.1f °C", primary->temperature_c);
     else
@@ -256,14 +257,15 @@ thermal_indicator_update(ThermalIndicator *indicator,
     app_indicator_set_label(indicator->app_indicator,
                             indicator->panel_label, "100.0 °C");
 
-    text = g_strdup_printf("Thermalert — %s", thermal_state_name(state));
+    text = g_strdup_printf(_("Thermalert — %s"),
+                           _(thermal_state_name(state)));
     gtk_menu_item_set_label(GTK_MENU_ITEM(indicator->state_item), text);
     g_free(text);
     if (primary != NULL)
-        text = g_strdup_printf("Primary: %s — %.1f °C", primary->label,
+        text = g_strdup_printf(_("Primary: %s — %.1f °C"), primary->label,
                                primary->temperature_c);
     else
-        text = g_strdup("Primary temperature reading unavailable");
+        text = g_strdup(_("Primary temperature reading unavailable"));
     gtk_menu_item_set_label(GTK_MENU_ITEM(indicator->highest_item), text);
     g_free(text);
 
@@ -295,16 +297,16 @@ thermal_indicator_notify_transition(ThermalIndicator *indicator,
         return;
 
     if (primary != NULL)
-        body = g_strdup_printf("%s temperature: %.1f °C", primary->label,
+        body = g_strdup_printf(_("%s temperature: %.1f °C"), primary->label,
                                primary->temperature_c);
     else
-        body = g_strdup("A high temperature state was detected.");
+        body = g_strdup(_("A high temperature state was detected."));
 
-    notification = notify_notification_new("Critical temperature", body,
+    notification = notify_notification_new(_("Critical temperature"), body,
                                            icon_for_state(current));
     notify_notification_set_urgency(notification, NOTIFY_URGENCY_CRITICAL);
     if (!notify_notification_show(notification, &error)) {
-        g_warning("Could not display a desktop notification: %s",
+        g_warning(_("Could not display a desktop notification: %s"),
                   error->message);
         g_clear_error(&error);
     }

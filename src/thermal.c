@@ -1,5 +1,7 @@
 #include "thermal.h"
 
+#include "i18n.h"
+
 ThermalState
 thermal_state_evaluate(ThermalState previous,
                        gboolean has_reading,
@@ -40,13 +42,13 @@ thermal_state_name(ThermalState state)
 {
     switch (state) {
     case THERMAL_STATE_NORMAL:
-        return "NORMAL";
+        return N_("NORMAL");
     case THERMAL_STATE_WARNING:
-        return "WARNING";
+        return N_("WARNING");
     case THERMAL_STATE_CRITICAL:
-        return "CRITICAL";
+        return N_("CRITICAL");
     case THERMAL_STATE_UNKNOWN:
     default:
-        return "UNKNOWN";
+        return N_("UNKNOWN");
     }
 }

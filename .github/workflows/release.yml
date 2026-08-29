@@ -28,6 +28,7 @@ jobs:
             debhelper \
             desktop-file-utils \
             dpkg-dev \
+            gettext \
             groff \
             libayatana-appindicator3-dev \
             libglib2.0-dev \
