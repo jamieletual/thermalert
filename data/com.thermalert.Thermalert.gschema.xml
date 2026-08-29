@@ -30,5 +30,10 @@
       <summary>Primary temperature sensor</summary>
       <description>Stable sensor identifier to display and monitor, or an empty string to select automatically.</description>
     </key>
+    <key name="notifications-enabled" type="b">
+      <default>true</default>
+      <summary>Enable notifications</summary>
+      <description>Whether to display a desktop notification when the temperature enters the critical state.</description>
+    </key>
   </schema>
 </schemalist>

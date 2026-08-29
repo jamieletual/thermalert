@@ -39,6 +39,8 @@ A default hysteresis of 5 °C prevents rapid state changes. For example, after
 entering Warning at 80 °C, Thermalert returns to Normal only after the relevant
 temperature falls below 75 °C. A notification is generated only when the state
 crosses into Critical, not on every polling cycle while it remains critical.
+Desktop notifications are enabled by default and can be disabled independently
+without stopping temperature monitoring or visual state updates.
 
 By default, Thermalert selects a primary sensor automatically. It prefers Intel
 CPU package readings, then AMD `Tctl` or `Tdie`, firmware-provided `CPU`
@@ -55,6 +57,7 @@ The preferences window exposes:
 
 - Primary temperature sensor (automatic or a specific discovered sensor)
 - Start automatically when the user logs in
+- Enable critical-temperature notifications (enabled by default)
 - Warning temperature
 - Critical temperature
 - Hysteresis
@@ -63,7 +66,8 @@ The preferences window exposes:
 Values are validated, including the requirement that the critical temperature
 be higher than the warning temperature. Sensor and threshold preferences are
 stored with GSettings and applied without restarting the application. The
-autostart option directly manages the user's XDG autostart entry.
+notification option takes effect immediately. The autostart option directly
+manages the user's XDG autostart entry.
 
 ## Platform and dependencies
 

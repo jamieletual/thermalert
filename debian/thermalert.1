@@ -13,8 +13,10 @@ GTK 3, GSettings, and AppIndicator status icons.
 .PP
 The indicator menu provides current sensor readings, a real-time temperature
 graph, configurable warning and critical thresholds, and desktop
-notifications. Thermalert defines no application-specific command-line
-options; GTK may accept its standard options.
+notifications. Notifications are enabled by default and are sent only when the
+selected primary temperature enters the critical state. They can be disabled
+without stopping monitoring or visual state updates. Thermalert defines no
+application-specific command-line options; GTK may accept its standard options.
 .PP
 Automatic sensor selection prefers CPU-wide readings such as Intel Package id
 0, followed by AMD Tctl, AMD Tdie, firmware CPU sensors, and individual CPU
@@ -24,7 +26,9 @@ critical thresholds are 80 and 100 degrees Celsius, with 5 degrees of
 hysteresis.
 .PP
 Preferences also provide an option to start Thermalert automatically when the
-user logs in. Installing the package does not enable autostart.
+user logs in and an option to enable or disable critical-temperature desktop
+notifications. Preference changes take effect immediately. Installing the
+package does not enable autostart.
 .SH FILES
 .TP
 .I /usr/share/glib-2.0/schemas/com.thermalert.Thermalert.gschema.xml

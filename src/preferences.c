@@ -26,6 +26,7 @@ struct _ThermalPreferences {
     GtkSpinButton *interval;
     GtkComboBoxText *sensor;
     GtkToggleButton *autostart;
+    GtkToggleButton *notifications;
     gchar *sensor_signature;
     gchar *sensor_configured_id;
     gchar *automatic_sensor_id;
@@ -151,6 +152,17 @@ autostart_toggled(GtkToggleButton *button, gpointer data)
 }
 
 static void
+notifications_toggled(GtkToggleButton *button, gpointer data)
+{
+    ThermalPreferences *preferences = data;
+
+    if (preferences->syncing)
+        return;
+    g_settings_set_boolean(preferences->settings, "notifications-enabled",
+                           gtk_toggle_button_get_active(button));
+}
+
+static void
 settings_changed(GSettings *settings, gchar *key, gpointer data)
 {
     (void)settings;
@@ -194,6 +206,10 @@ preferences_sync(ThermalPreferences *preferences)
     gtk_spin_button_set_value(
         preferences->interval,
         g_settings_get_uint(preferences->settings, "polling-interval"));
+    gtk_toggle_button_set_active(
+        preferences->notifications,
+        g_settings_get_boolean(preferences->settings,
+                               "notifications-enabled"));
     preferences->syncing = FALSE;
     gtk_widget_hide(preferences->validation);
 }
@@ -233,16 +249,22 @@ thermal_preferences_new(GSettings *settings)
     gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(preferences->autostart),
                     0, 1, 2, 1);
 
-    spin = add_spin_row(GTK_GRID(grid), 2, "Warning temperature (°C)",
+    preferences->notifications = GTK_TOGGLE_BUTTON(
+        gtk_check_button_new_with_label(
+            "Enable critical-temperature notifications"));
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(preferences->notifications),
+                    0, 2, 2, 1);
+
+    spin = add_spin_row(GTK_GRID(grid), 3, "Warning temperature (°C)",
                         1.0, 149.0, 1.0, &preferences->warning);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    spin = add_spin_row(GTK_GRID(grid), 3, "Critical temperature (°C)",
+    spin = add_spin_row(GTK_GRID(grid), 4, "Critical temperature (°C)",
                         2.0, 150.0, 1.0, &preferences->critical);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    spin = add_spin_row(GTK_GRID(grid), 4, "Hysteresis (°C)",
+    spin = add_spin_row(GTK_GRID(grid), 5, "Hysteresis (°C)",
                         0.0, 30.0, 1.0, &preferences->hysteresis);
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spin), 1);
-    add_spin_row(GTK_GRID(grid), 5, "Polling interval (seconds)",
+    add_spin_row(GTK_GRID(grid), 6, "Polling interval (seconds)",
                  1.0, 300.0, 1.0, &preferences->interval);
 
     preferences->validation = gtk_label_new(NULL);
@@ -250,12 +272,14 @@ thermal_preferences_new(GSettings *settings)
     gtk_label_set_line_wrap(GTK_LABEL(preferences->validation), TRUE);
     gtk_style_context_add_class(
         gtk_widget_get_style_context(preferences->validation), "error");
-    gtk_grid_attach(GTK_GRID(grid), preferences->validation, 0, 6, 2, 1);
+    gtk_grid_attach(GTK_GRID(grid), preferences->validation, 0, 7, 2, 1);
 
     g_signal_connect(preferences->sensor, "changed",
                      G_CALLBACK(sensor_changed), preferences);
     g_signal_connect(preferences->autostart, "toggled",
                      G_CALLBACK(autostart_toggled), preferences);
+    g_signal_connect(preferences->notifications, "toggled",
+                     G_CALLBACK(notifications_toggled), preferences);
     g_signal_connect(preferences->warning, "value-changed",
                      G_CALLBACK(value_changed), preferences);
     g_signal_connect(preferences->critical, "value-changed",
