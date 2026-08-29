@@ -91,8 +91,10 @@ poll_sensors(gpointer data)
         primary != NULL ? primary->temperature_c : 0.0, &thresholds);
     thermal_indicator_update(application->indicator, application->state,
                              application->snapshot, primary);
-    thermal_indicator_notify_transition(application->indicator, previous,
-                                        application->state, primary);
+    if (g_settings_get_boolean(application->settings,
+                               "notifications-enabled"))
+        thermal_indicator_notify_transition(application->indicator, previous,
+                                            application->state, primary);
     thermal_preferences_update_sensors(application->preferences,
                                        application->snapshot,
                                        thermal_sensors_select_primary(
