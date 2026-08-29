@@ -1,3 +1,10 @@
+thermalert (0.2.0-1) noble; urgency=medium
+
+  * Add a preference to enable or disable critical-temperature desktop
+    notifications without interrupting monitoring or visual state updates.
+
+ -- Jamie Le Tual <jamie.letual@gmail.com>  Sat, 29 Aug 2026 15:30:19 -0400
+
 thermalert (0.1.0-1) noble; urgency=medium
 
   * Initial Debian package.
